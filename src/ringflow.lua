@@ -3,7 +3,7 @@
 -- 
 -- Standalone & Multim0d-compatible
 --   
--- **nov 3 2009     @jme**
+-- **nov 3 2009     jm ervin**
 --  
 --
 --  <img src="images/ringflow_infox.png">

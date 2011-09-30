@@ -2,7 +2,7 @@
 -- 
 -- Standalone & Multim0d-compatible
 --
--- **dec 19 2009     @jme**
+-- **dec 19 2009     jm ervin**
 --
 -- Sets specified tiles at random locations within a designated ground area.
 --

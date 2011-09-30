@@ -2,7 +2,7 @@
 --
 -- Standalone & Multim0d-compatible
 -- 
--- **nov 10 2009     @jme**
+-- **nov 10 2009     jm ervin**
 --
 -- Spawns multiple objects, of multiple types and slides them to a destination point. Optional "portal" object, spawn sound and object scaling. 
 --

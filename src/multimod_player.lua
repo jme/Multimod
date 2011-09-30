@@ -1,6 +1,6 @@
 -- multimod_player v3.0 
 --
--- **oct 7 2009      @jme**
+-- **oct 7 2009      jm ervin**
 --
 --
 -- (NOTE: "m3p" --> multimod multi-player)
