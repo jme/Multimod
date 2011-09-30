@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>dramatic_spawner.lua</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <link rel="stylesheet" media="all" href="locco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+    <table cellpadding="0" cellspacing="0">
+      <thead>
+        <tr>
+          <th class="docs">
+            <h1>
+              dramatic_spawner.lua
+            </h1>
+          </th>
+          <th class="code">
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+<tr id="section-1">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-1">&#182;</a>
+  </div>
+  
+<p>Dramatic Spawner v1.9</p>
+
+<p>Standalone &amp; Multim0d-compatible</p>
+
+<p><strong>nov 10 2009     @jme</strong></p>
+
+<p>Spawns multiple objects, of multiple types and slides them to a destination point. Optional "portal" object, spawn sound and object scaling. </p>
+
+<h2><img src="images/mod_ds_info.png"></h2>
+<h2>Properties section</h2>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>
+</pre></div>
+</td>
+</tr><tr id="section-2">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-2">&#182;</a>
+  </div>
+  
+<p>Metaplace Lua included script state variables via <em>properties</em> that could be hidden, exposed or persisted.
+Here there are "constant" properties as well as user-config properties.
+Vars deemed contstant-by-convention are indicated by <strong>ALL CAPS</strong></p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>Define Properties()
+   
+    im_running = <span class="k">false</span> 
+    portal = {}
+    herd = {}
+    
+</pre></div>
+</td>
+</tr><tr id="section-3">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-3">&#182;</a>
+  </div>
+  
+<p>Specify the call signature here. This is just an informative string and
+should indicate all parameters (in order) needed to manually call this plugin.
+Param onchanges are caught and reverted, <strong>SEE "parm_changed" method</strong></p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>    PARAMS_SIGNATURE = <span class="s">" DELAY(ms), #OBJECTS-SPAWNED, OBJECTS(separated by spaces), OBJECT LIFETIME(ms), OBJ SPEED(ms), VARY OBJ SPEED? (0 or 1), PORTAL, PORTAL_LIFETIME(ms), SOUND-ID, VOLUME, Xo, Yo, Zo, Xp, Yp, Zp, SCATTER, SCALEX, SCALEY "</span>    
+    PARAMS_SIGMSG = <span class="s">"Parameter sig for Multim0d manual mode usage (optional)"</span>
+     
+   
+</pre></div>
+</td>
+</tr><tr id="section-4">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-4">&#182;</a>
+  </div>
+  
+<p>declare default and/or hot-start values for any public properties.</p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>       MOD_DS_QUANTOS          = 1
+       MOD_DS_X0               = 5
+       MOD_DS_Y0               = 5 
+       MOD_DS_Z0               = 127 
+       MOD_DS_SOUND            = <span class="s">'24050:127'</span>
+       MOD_DS_VOLUME           = 125
+       MOD_DS_XP               = 7
+       MOD_DS_YP               = 7 
+       MOD_DS_ZP               = 127        
+       MOD_DS_SCATTER          = 6
+       MOD_DS_PORTAL_LINGER_MS = 800      
+       MOD_DS_LINGER_MS        = 2500 
+       MOD_DS_SPEED_MS         = 700
+       MOD_DS_USE_AVG_SPEED    = 1
+       MOD_DS_DEF_PORTAL       = <span class="s">'181859:42'</span>
+       MOD_DS_DEF_OBJECTS      = <span class="s">'181859:43'</span> 
+       MOD_DS_DELAY            = 0
+       MOD_DS_SCALEX           = 0
+       MOD_DS_SCALEY           = 0
+    
+</pre></div>
+</td>
+</tr><tr id="section-5">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-5">&#182;</a>
+  </div>
+  
+<p>A silly Tools issue provoked this bit of egregiousness.   </p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>    param_count = 19
+</pre></div>
+</td>
+</tr><tr id="section-6">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-6">&#182;</a>
+  </div>
+  
+<p>User-accessible <strong>Properties</strong></p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>    mod_ds_delay = MOD_DS_DELAY
+    PersistProperty(<span class="s">'mod_ds_delay'</span>)
+    ExposeProperty(<span class="s">'mod_ds_delay'</span>, <span class="s">'Startup delay (ms) [default: '</span> ..MOD_DS_DELAY ..<span class="s">"]"</span>)
+
+    mod_ds_quantos = MOD_DS_QUANTOS
+    PersistProperty(<span class="s">'mod_ds_quantos'</span>)
+    ExposeProperty(<span class="s">'mod_ds_quantos'</span>, <span class="s">'Total # of objects to spawn [default: '</span> ..MOD_DS_QUANTOS ..<span class="s">"]"</span>)
+    
+    mod_ds_objects = MOD_DS_DEF_OBJECTS
+    PersistProperty(<span class="s">'mod_ds_objects'</span>)
+    ExposeProperty(<span class="s">'mod_ds_objects'</span>, <span class="s">'Object IDs to spawn (separated by spaces) [default: '</span> ..MOD_DS_DEF_OBJECTS ..<span class="s">"]"</span>)
+    
+    mod_ds_linger_ms = MOD_DS_LINGER_MS
+    PersistProperty(<span class="s">'mod_ds_linger_ms'</span>)
+    ExposeProperty(<span class="s">'mod_ds_linger_ms'</span>, <span class="s">'Lifetime of spawned objects (ms) [default: '</span> ..MOD_DS_LINGER_MS ..<span class="s">"]"</span>)
+
+    mod_ds_speed_ms = MOD_DS_SPEED_MS
+    PersistProperty(<span class="s">'mod_ds_speed_ms'</span>)
+    ExposeProperty(<span class="s">'mod_ds_speed_ms'</span>, <span class="s">'Move spawned objects at this rate (ms) [default: '</span> ..MOD_DS_SPEED_MS ..<span class="s">"]"</span>)
+
+    mod_ds_use_avg_speed = MOD_DS_USE_AVG_SPEED
+    PersistProperty(<span class="s">'mod_ds_use_avg_speed'</span>)
+    ExposeProperty(<span class="s">'mod_ds_use_avg_speed'</span>, <span class="s">'Vary object speed [default: ON]'</span>, <span class="s">'checkbox'</span>)
+
+    mod_ds_portal = MOD_DS_DEF_PORTAL
+    PersistProperty(<span class="s">'mod_ds_portal'</span>)
+    ExposeProperty(<span class="s">'mod_ds_portal'</span>, <span class="s">'Portal object (blank for none) [default: '</span> ..MOD_DS_DEF_PORTAL ..<span class="s">"]"</span>)
+
+    mod_ds_portal_linger_ms = MOD_DS_PORTAL_LINGER_MS
+    PersistProperty(<span class="s">'mod_ds_portal_linger_ms'</span>)
+    ExposeProperty(<span class="s">'mod_ds_portal_linger_ms'</span>, <span class="s">'Portal lifetime (ms) [default: '</span> ..MOD_DS_PORTAL_LINGER_MS ..<span class="s">"]"</span>)
+
+    mod_ds_sound = MOD_DS_SOUND
+    PersistProperty(<span class="s">'mod_ds_sound'</span>)
+    ExposeProperty(<span class="s">'mod_ds_sound'</span>, <span class="s">'Sound to play with spawning [default: '</span> ..MOD_DS_SOUND ..<span class="s">"]"</span>)
+    
+    mod_ds_volume = MOD_DS_VOLUME
+    PersistProperty(<span class="s">'mod_ds_volume'</span>)
+    ExposeProperty(<span class="s">'mod_ds_volume'</span>, <span class="s">'Volume of spawn sound (blank for none) [default: '</span> ..MOD_DS_VOLUME ..<span class="s">"]"</span>)
+    SetPropRange(<span class="s">'mod_ds_volume'</span>,0,255)
+
+    mod_ds_x0 = MOD_DS_X0
+    PersistProperty(<span class="s">'mod_ds_x0'</span>)
+    ExposeProperty(<span class="s">'mod_ds_x0'</span>, <span class="s">'Spawn point, x-value [default: '</span> ..MOD_DS_X0 ..<span class="s">"]"</span>)
+
+    mod_ds_y0 = MOD_DS_Y0
+    PersistProperty(<span class="s">'mod_ds_y0'</span>)
+    ExposeProperty(<span class="s">'mod_ds_y0'</span>, <span class="s">'Spawn point, y-value [default: '</span> ..MOD_DS_Y0 ..<span class="s">"]"</span>)
+
+    mod_ds_z0 = MOD_DS_Z0
+    PersistProperty(<span class="s">'mod_ds_z0'</span>)
+    ExposeProperty(<span class="s">'mod_ds_z0'</span>, <span class="s">'Spawn point, z-value [default: '</span> ..MOD_DS_Z0 ..<span class="s">"]"</span>)
+
+    mod_ds_xp = MOD_DS_XP
+    PersistProperty(<span class="s">'mod_ds_xp'</span>)
+    ExposeProperty(<span class="s">'mod_ds_xp'</span>, <span class="s">'Destination point, x-value [default: '</span> ..MOD_DS_XP ..<span class="s">"]"</span>)
+
+    mod_ds_yp = MOD_DS_YP
+    PersistProperty(<span class="s">'mod_ds_yp'</span>)
+    ExposeProperty(<span class="s">'mod_ds_yp'</span>, <span class="s">'Destination point, y-value [default: '</span> ..MOD_DS_YP ..<span class="s">"]"</span>)
+
+    mod_ds_zp = MOD_DS_ZP
+    PersistProperty(<span class="s">'mod_ds_zp'</span>)
+    ExposeProperty(<span class="s">'mod_ds_zp'</span>, <span class="s">'Destination point, z-value [default: '</span> ..MOD_DS_ZP ..<span class="s">"]"</span>)
+
+    mod_ds_scatter = MOD_DS_SCATTER
+    PersistProperty(<span class="s">'mod_ds_scatter'</span>)
+    ExposeProperty(<span class="s">'mod_ds_scatter'</span>, <span class="s">'Destination scatter value [default: '</span> ..MOD_DS_SCATTER ..<span class="s">"]"</span>)
+
+    mod_ds_scalex = MOD_DS_SCALEX
+    PersistProperty(<span class="s">'mod_ds_scalex'</span>)
+    ExposeProperty(<span class="s">'mod_ds_scalex'</span>, <span class="s">'sprite scale for x-axis (can be slow) [default: '</span> ..MOD_DS_SCALEX ..<span class="s">"]"</span>)
+    
+    mod_ds_scaley = MOD_DS_SCALEY
+    PersistProperty(<span class="s">'mod_ds_scaley'</span>)
+    ExposeProperty(<span class="s">'mod_ds_scaley'</span>, <span class="s">'sprite scale for y-axis (can be slow) [default: '</span> ..MOD_DS_SCALEY ..<span class="s">"]"</span>)
+
+</pre></div>
+</td>
+</tr><tr id="section-7">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-7">&#182;</a>
+  </div>
+  
+<p>Param sig for use with MultiM0d
+Just placing this at bottom to avoid confusion.</p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>    mod_ds_signature = PARAMS_SIGNATURE
+    ExposeProperty(<span class="s">'mod_ds_signature'</span>, PARAMS_SIGMSG)   
+</pre></div>
+</td>
+</tr><tr id="section-8">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-8">&#182;</a>
+  </div>
+  
+<p>Standard required tool version, name and description fields
+Change to match your needs</p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>    bt_behavior = 1
+    bt_name = <span class="s">'dramatic_spawner'</span>
+    bt_desc = <span class="s">'Dramatic Spawner: (Multim0d compatible)'</span>
+    bt_help_image = <span class="s">'181859:544'</span>
+    bt_help_image_height = 278
+<span class="k">end</span>
+</pre></div>
+</td>
+</tr><tr id="section-9">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-9">&#182;</a>
+  </div>
+  
+<hr/>
+<h2>Methods and Handlers</h2>
+<p><strong>[ Triggers would be called by the sim serverside, given the appropriate conditions ]</strong></p>
+
+
+<hr/>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>
+</pre></div>
+</td>
+</tr><tr id="section-10">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-10">&#182;</a>
+  </div>
+  
+<p><strong>[Required Boilerplate]</strong>
+This is a mild bit of hackery.
+The <em>Call Signature</em> of an effect needed to be displayed on the Behavior Tool,
+but there was no way to write R/O text, only text that could be potentially 
+altered by the user. As a workaround each Multim0d effect would respond to the
+BT onchange trigger in order to revert attempted changes to 
+any public properties that needed to be R/O, such as the call signature.</p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>Trigger param_changed(owner, owner_id, script_id, prop)
+ 
+  <span class="k">local</span> pname = self.bt_name ..<span class="s">"_signature"</span>
+  
+  <span class="k">if</span> (prop == pname) <span class="k">then</span>   
+    Debug(<span class="s">"&lt; SIG CHANGED &gt; "</span> ..<span class="s">"script_id="</span> ..script_id ..<span class="s">" owner_id="</span> ..owner_id)        
+    SendTo(self, <span class="s">'set_script_param'</span>, 0, owner, owner.id, script_id, prop, self.PARAMS_SIGNATURE)    
+    Debug(<span class="s">"reverting signature, you silly rabbit!"</span>) 
+  <span class="k">end</span>  
+<span class="k">end</span>
+
+</pre></div>
+</td>
+</tr><tr id="section-11">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-11">&#182;</a>
+  </div>
+  
+<hr/>
+<p>Just the Lua Standard reference method for comma-separated variable handling, tweaked to use any separater character.</p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre><span class="k">function</span> <span class="nf">from_tsv</span>(s,token)
+
+      s = s ..token      
+      <span class="k">local</span> t = {}      
+      <span class="k">local</span> fieldstart = 1
+      
+      <span class="k">repeat</span>   <span class="c">-- next field is quoted? (start with `"'?)
+</span>        <span class="k">if</span> string.find(s, <span class="s">'^"'</span>, fieldstart) <span class="k">then</span>
+          <span class="k">local</span> a, c
+          <span class="k">local</span> i  = fieldstart
+          <span class="k">repeat</span>   <span class="c">-- find closing quote
+</span>            a, i, c = string.find(s, <span class="s">'"("?)'</span>, i+1)
+          <span class="k">until</span> c ~= <span class="s">'"'</span>    <span class="c">-- quote not followed by quote?
+</span>          <span class="k">if</span> <span class="o">not</span> i <span class="k">then</span> <span class="nt">error</span>(<span class="s">'unmatched "'</span>) <span class="k">end</span>
+          <span class="k">local</span> f = string.sub(s, fieldstart+1, i-1)
+          table.insert(t, (string.gsub(f, <span class="s">'""'</span>, <span class="s">'"'</span>)))
+          fieldstart = string.find(s, token, i) + 1
+        <span class="k">else</span>                <span class="c">-- unquoted; find next comma
+</span>          <span class="k">local</span> nexti = string.find(s, token, fieldstart)
+          table.insert(t, string.sub(s, fieldstart, nexti-1))
+          fieldstart = nexti + 1
+        <span class="k">end</span>
+      <span class="k">until</span> fieldstart > string.len(s)
+      
+      <span class="k">return</span> t
+<span class="k">end</span>
+
+</pre></div>
+</td>
+</tr><tr id="section-12">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-12">&#182;</a>
+  </div>
+  
+<hr/>
+<p><strong>Shutdown</strong></p>
+
+<p><strong>[API, REQUIRED]</strong>
+ Vary the internals as desired, just be sure to invoke a crisp shutdown!</p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>Trigger mod_ds_shutdown()
+  self.im_running = <span class="k">false</span>
+  SendTo(self,<span class="s">'multimod_cmd_done'</span>,10)             
+  Debug(self.bt_name ..<span class="s">" shutdown!"</span>)          
+<span class="k">end</span>
+
+</pre></div>
+</td>
+</tr><tr id="section-13">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-13">&#182;</a>
+  </div>
+  
+<hr/>
+<p><strong>core function</strong></p>
+
+<ul>
+    <li><p>Spawn a herd of objects as per user config parameters.</p></li>
+    <li><p>Play specified sounds while moving herd members from source to destination, at variable speeds and with a (bounded) scattering function applied.</p></li>
+    <li><p>Spawned objects auto-delete once their linger param expires.</p></li>
+</ul>
+
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>Trigger dramatic_spawner()
+   Debug(self.bt_name ..<span class="s">"  - runnning -"</span>)
+   table.clear(self.herd)
+   table.clear(self.portal)
+
+   <span class="k">if</span> (self.mod_ds_portal ~= <span class="s">''</span>) <span class="k">then</span>  
+     the_portal = CreateObjectById(self.mod_ds_portal, self.mod_ds_x0-1, self.mod_ds_y0-1, self.mod_ds_z0, 0)
+     the_portal.lifetime = self.mod_ds_portal_linger_ms
+     table.insert(self.portal,the_portal)
+   <span class="k">end</span>  
+
+   <span class="k">local</span> obtable = from_tsv(self.mod_ds_objects,<span class="s">' '</span>)
+   <span class="k">local</span> xid = self.MOD_DS_DEF_OBJECTS
+   <span class="k">local</span> ixp = 1
+   <span class="k">local</span> iyp = 1   
+   
+   <span class="k">if</span> (self.mod_ds_sound ~= <span class="s">''</span>) <span class="k">then</span>     
+     <span class="k">local</span> soundHandleId = PlaySoundPlace(self.mod_ds_sound, self.mod_ds_volume, 0)            
+   <span class="k">end</span>  
+   
+  <span class="k">if</span> (#obtable > 0) <span class="k">then</span>   
+   <span class="k">for</span> i =1,self.mod_ds_quantos <span class="k">do</span> 
+     xid = obtable[math.random(#obtable)]    
+     theob = CreateObjectById(xid, self.mod_ds_x0, self.mod_ds_y0, self.mod_ds_z0, 0)  
+     theob.lifetime = self.mod_ds_linger_ms
+     
+     <span class="k">if</span> (self.mod_ds_scalex > 0) <span class="k">then</span>     
+       theob.spriteScaleX = self.mod_ds_scalex
+     <span class="k">end</span>  
+     <span class="k">if</span> (self.mod_ds_scaley > 0) <span class="k">then</span>     
+       theob.spriteScaleY = self.mod_ds_scaley
+     <span class="k">end</span>  
+     
+     table.insert(self.herd,theob)
+     
+      <span class="k">if</span> (self.mod_ds_scatter > 0) <span class="k">then</span>
+        ixp = math.random(self.mod_ds_scatter) + self.mod_ds_xp
+        iyp = math.random(self.mod_ds_scatter) + self.mod_ds_yp 
+      <span class="k">else</span>
+        ixp = self.mod_ds_xp
+        iyp = self.mod_ds_yp 
+      <span class="k">end</span>     
+
+     <span class="k">if</span> (self.mod_ds_use_avg_speed == 1) <span class="k">then</span>
+       SlideObject(theob, ixp, iyp, self.mod_ds_zp, math.random(self.mod_ds_speed_ms/2) + self.mod_ds_speed_ms, 1)
+     <span class="k">else</span>
+       SlideObject(theob, ixp, iyp, self.mod_ds_zp, self.mod_ds_speed_ms, 1)       
+     <span class="k">end</span>  
+   <span class="k">end</span>
+ <span class="k">end</span>
+
+  SendTo(self,<span class="s">'mod_ds_shutdown'</span>,self.mod_ds_linger_ms)
+<span class="k">end</span>
+
+
+</pre></div>
+</td>
+</tr><tr id="section-14">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-14">&#182;</a>
+  </div>
+  
+<hr/>
+<p><strong>Validate</strong></p>
+
+<p><strong>[API, Optional]</strong> Parameter validations. Validations will probably be custom for each effect,</p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre><span class="k">function</span> <span class="nf">mod_ds_validate_params</span>(owner,p)
+
+   p[1] = math.abs(p[1])
+   p[2] = math.abs(p[2])   
+
+   p[4] = math.abs(p[4])   
+   p[5] = math.abs(p[5])   
+
+   p[6] = math.abs(p[6])   
+   <span class="k">if</span> (p[6] > 1) <span class="k">then</span>
+     p[6] = 1
+   <span class="k">end</span>
+
+   p[8] = math.abs(p[8])   
+   p[10] = math.abs(p[10])   
+   <span class="k">if</span> (p[10] > 255) <span class="k">then</span>
+      p[10] = 255
+   <span class="k">end</span>
+   
+   p[11] = math.abs(p[11])
+   p[12] = math.abs(p[12])   
+   p[13] = math.abs(p[13])   
+   p[14] = math.abs(p[14])      
+   p[15] = math.abs(p[15])   
+   p[16] = math.abs(p[16])   
+   p[17] = math.abs(p[17])   
+   p[18] = math.abs(p[18])   
+   p[19] = math.abs(p[19])   
+<span class="k">end</span>
+           
+</pre></div>
+</td>
+</tr><tr id="section-15">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-15">&#182;</a>
+  </div>
+  
+<hr/>
+<p><strong>[API, Required]</strong> :  accept/handle manual shutdown commands</p>
+
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>Trigger mod_cmd_shutdown()
+  self.im_running = <span class="k">false</span>
+  Debug(self.bt_name ..<span class="s">" : Got Manual shutdown message!"</span>)
+<span class="k">end</span>
+
+
+</pre></div>
+</td>
+</tr><tr id="section-16">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-16">&#182;</a>
+  </div>
+  
+<hr/>
+<p><strong>Trigger for standalone usage</strong></p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>Trigger use(user)   
+  <span class="k">if</span> (self.multimod_present == <span class="k">nil</span>) <span class="k">then</span>
+    Debug(<span class="s">"Multim0d not found. Running standalone..."</span>)
+    <span class="k">if</span> (self.im_running == <span class="k">false</span>) <span class="k">then</span>  
+      self.im_running = <span class="k">true</span>
+      SendTo(self,self.bt_name,self.mod_ds_delay)    
+    <span class="k">else</span>
+      Debug(<span class="s">"Not yet!"</span>)
+    <span class="k">end</span>  
+  <span class="k">else</span>  
+    Debug(<span class="s">"Got Multim0d."</span>)
+  <span class="k">end</span>  
+<span class="k">end</span>
+
+
+</pre></div>
+</td>
+</tr><tr id="section-17">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-17">&#182;</a>
+  </div>
+  
+<hr/>
+<p>This is the new API startup, here just a wrapper to facilitate legacy calls.</p>
+
+<p>Won't need this in the future, but is here a work-around for the deployed base.</p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>Trigger dramatic_spawner_startup(xparams) 
+    SendTo(self,<span class="s">'dramatic_spawner_start'</span>,0,0,0,0,0,xparams)
+<span class="k">end</span>
+
+
+</pre></div>
+</td>
+</tr><tr id="section-18">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-18">&#182;</a>
+  </div>
+  
+<hr/>
+<p><strong>(LEGACY) Main multimod entry point for the effect</strong></p>
+
+<p>This is called by the Player and is passed X &amp; Y origin coords, span width &amp; height values and finally a Player-opaque, possibly empty table of support params.</p>
+
+<p>This call starts the plugin running and should toggle on/off cleanly.</p>
+
+<ul>
+    <li><p>indicate state change</p></li>
+    <li><p>setup run according to params and options     </p></li>
+    <li><p>If an appropriate number of valid paramaeters are supplied, use them. Otherwise just use defaults.</p></li>
+</ul>
+
+<blockquote>
+    <p>NOTE: since the support params (xparams) table is opaque to the Player, (implicit) integer table keys are used.  </p>
+</blockquote>
+
+<ul>
+    <li><p>And at last, call the effect (delaying appropriately) with X&amp;Y origin and span W + H.</p></li>
+    <li><p>In case something goes wrong, catch a variety of error conditions that may fail to properly set the effect "finished" flag. This is another complexity compromise that just sets up a 'clean' run for next time...</p></li>
+</ul>
+
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>Trigger dramatic_spawner_start(x0,y0,xr,yr,xparams) 
+
+
+   <span class="k">if</span> (self.im_running == <span class="k">false</span>) <span class="k">then</span>   
+     self.im_running = <span class="k">true</span>
+
+     <span class="k">if</span> (#xparams ~= 0) <span class="k">then</span>
+       <span class="k">if</span> (#xparams == self.param_count) <span class="k">then</span>       
+
+           mod_ds_validate_params(self,xparams)
+           
+           self.mod_ds_delay = xparams[1]                            
+           self.mod_ds_quantos = xparams[2]
+           self.mod_ds_objects = xparams[3]                                            
+           self.mod_ds_linger_ms = xparams[4]           
+           self.mod_ds_speed_ms = xparams[5]                                 
+           self.mod_ds_use_avg_speed = xparams[6]                      
+           
+           self.mod_ds_portal = xparams[7]                      
+           self.mod_ds_portal_linger_ms = xparams[8]                      
+           self.mod_ds_sound = xparams[9]      
+           self.mod_ds_volume = xparams[10]  
+
+           self.mod_ds_x0 = xparams[11]                                 
+           self.mod_ds_y0 = xparams[12]                                 
+           self.mod_ds_z0 = xparams[13]      
+                      
+           self.mod_ds_xp = xparams[14]                                 
+           self.mod_ds_yp = xparams[15]                                 
+           self.mod_ds_zp = xparams[16]      
+           self.mod_ds_scatter = xparams[17]      
+
+           self.mod_ds_scalex = xparams[18]      
+           self.mod_ds_scaley = xparams[19]                                                             
+       <span class="k">else</span>
+         Debug(self.id ..<span class="s">": "</span> ..self.bt_name ..<span class="s">" ERROR: Manual mode: incorrect number of playlist params"</span>)
+         Debug(<span class="s">'required: '</span> ..self.param_count ..<span class="s">"params, got "</span> ..#xparams )         
+       <span class="k">end</span>
+     <span class="k">end</span>
+
+      SendTo(self, self.bt_name, self.mod_ds_delay)        
+     
+   <span class="k">else</span>
+     Debug(self.bt_name ..<span class="s">' sez: not yet...'</span>)      
+     self.im_running = <span class="k">false</span>
+   <span class="k">end</span>
+<span class="k">end</span> 
+</pre></div>
+</td>
+</tr></tbody>
+    </table>
+  </div>
+</body>
+</html>

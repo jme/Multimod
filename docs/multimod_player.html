@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>multimod_player.lua</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <link rel="stylesheet" media="all" href="locco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+    <table cellpadding="0" cellspacing="0">
+      <thead>
+        <tr>
+          <th class="docs">
+            <h1>
+              multimod_player.lua
+            </h1>
+          </th>
+          <th class="code">
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+<tr id="section-1">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-1">&#182;</a>
+  </div>
+  
+<p>multimod_player v3.0 </p>
+
+<p><strong>oct 7 2009      @jme</strong></p>
+
+
+<p>(NOTE: "m3p" --> multimod multi-player)</p>
+
+
+<hr/>
+<p>Multim0d is a script sequencer that plays compatible MP Behavior Tool scripts sequentially from a playlist, with or without looping.</p>
+
+<p>It includes an easy-to-use API and an ever-growing number of compatible BT scripts.</p>
+
+
+<p><img src="images/info_cap2.png"></p>
+
+<hr/>
+<h2>Properties section</h2>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>
+</pre></div>
+</td>
+</tr><tr id="section-2">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-2">&#182;</a>
+  </div>
+  
+<p>Metaplace Lua included script state variables via <em>properties</em> that could be hidden, exposed or persisted.
+Here there are "constant" properties as well as user-config properties.
+Vars deemed contstant-by-convention are indicated by <strong>ALL CAPS</strong></p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>Define Properties()
+
+    multimod_present = <span class="k">true</span>
+    multimod_inited = <span class="k">false</span>
+    multimod_running = <span class="k">false</span>
+    effect_index = 1
+    playlist = {}
+    forced_post_op = <span class="k">false</span>
+    
+    M3P_DEFAULT_POST_OP = <span class="s">""</span>   
+    M3P_DEFAULT_PRE_OP = <span class="s">""</span>   
+
+    multimod_req_su = 1       
+    PersistProperty(<span class="s">'multimod_req_su'</span>)
+    ExposeProperty(<span class="s">'multimod_req_su'</span>, <span class="s">'Restrict to superuser(s) only.'</span>, <span class="s">'checkbox'</span>) 
+</pre></div>
+</td>
+</tr><tr id="section-3">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-3">&#182;</a>
+  </div>
+  
+<ul>
+    <li>Display status with local chat messages. Useful for configuring your playlist. (default = on)</li>
+</ul>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>    m3p_chat_status = 1
+    PersistProperty(<span class="s">'m3p_chat_status'</span>)
+    ExposeProperty(<span class="s">'m3p_chat_status'</span>,<span class="s">'Send status messages to chat'</span>,<span class="s">'checkbox'</span>)
+</pre></div>
+</td>
+</tr><tr id="section-4">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-4">&#182;</a>
+  </div>
+  
+<ul>
+    <li>toggle for endless effect playback (default = off)</li>
+</ul>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>    m3p_playlist_loop = 0
+    PersistProperty(<span class="s">'m3p_playlist_loop'</span>)
+    ExposeProperty(<span class="s">'m3p_playlist_loop'</span>, <span class="s">'Loop playlist:'</span>, <span class="s">'checkbox'</span>) 
+
+    m3p_pre_op = M3P_DEFAULT_PRE_OP
+    PersistProperty(<span class="s">'m3p_pre_op'</span>)
+    ExposeProperty(<span class="s">'m3p_pre_op'</span>, <span class="s">'play this m0d before playlist (e.g., for setup)'</span>)        
+
+    m3p_post_op = M3P_DEFAULT_POST_OP
+    PersistProperty(<span class="s">'m3p_post_op'</span>)
+    ExposeProperty(<span class="s">'m3p_post_op'</span>, <span class="s">'play this m0d after playlist (e.g., for cleanup)'</span>)        
+
+    m3p_user_playlist = {<span class="s">"mod_random"</span>}    
+    PersistRuntimeProperty(<span class="s">'m3p_user_playlist'</span>)    
+    ExposeProperty(<span class="s">'m3p_user_playlist'</span>, <span class="s">'playlist  '</span>)
+   
+
+</pre></div>
+</td>
+</tr><tr id="section-5">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-5">&#182;</a>
+  </div>
+  
+<p>Standard required tool version, name and description fields</p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>    bt_behavior = 1
+    bt_desc = <span class="s">'Multim0d Player v3'</span>
+    bt_name = <span class="s">'multimod_player'</span>
+<span class="k">end</span>
+
+
+</pre></div>
+</td>
+</tr><tr id="section-6">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-6">&#182;</a>
+  </div>
+  
+<hr/>
+<p><strong>Init</strong></p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre><span class="k">function</span> <span class="nf">multimod_init</span>(owner)
+    owner.multimod_inited = <span class="k">true</span>
+<span class="k">end</span>
+
+
+</pre></div>
+</td>
+</tr><tr id="section-7">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-7">&#182;</a>
+  </div>
+  
+<hr/>
+<p><strong>from_csv</strong></p>
+
+<p>This is just the CSV reference method from the Lua Standard algorithms, tweaked to use any separator character.</p>
+
+<p>scan for ending tokens, collect fields in table t.</p>
+
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre><span class="k">function</span> <span class="nf">from_csv</span>(s)
+      <span class="k">local</span> token = <span class="s">'+'</span>
+      s = s ..token 
+      <span class="k">local</span> t = {} 
+      <span class="k">local</span> fieldstart = 1
+      
+      <span class="k">repeat</span>   <span class="c">-- next field is quoted? (start with `"'?)
+</span>	      
+        <span class="k">if</span> string.find(s, <span class="s">'^"'</span>, fieldstart) <span class="k">then</span>
+          <span class="k">local</span> a, c
+          <span class="k">local</span> i  = fieldstart
+          <span class="k">repeat</span>   <span class="c">-- find closing quote
+</span>
+            a, i, c = string.find(s, <span class="s">'"("?)'</span>, i+1)
+          <span class="k">until</span> c ~= <span class="s">'"'</span>    <span class="c">-- quote not followed by quote?
+</span>          <span class="k">if</span> <span class="o">not</span> i <span class="k">then</span> <span class="nt">error</span>(<span class="s">'unmatched "'</span>) <span class="k">end</span>
+          <span class="k">local</span> f = string.sub(s, fieldstart+1, i-1)
+          table.insert(t, (string.gsub(f, <span class="s">'""'</span>, <span class="s">'"'</span>)))
+          fieldstart = string.find(s, token, i) + 1
+        <span class="k">else</span>                <span class="c">-- unquoted; find next comma
+</span>          <span class="k">local</span> nexti = string.find(s, token, fieldstart)
+          table.insert(t, string.sub(s, fieldstart, nexti-1))
+          fieldstart = nexti + 1
+        <span class="k">end</span>
+      <span class="k">until</span> fieldstart > string.len(s)
+      
+      <span class="k">return</span> t
+<span class="k">end</span>
+
+
+</pre></div>
+</td>
+</tr><tr id="section-8">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-8">&#182;</a>
+  </div>
+  
+<hr/>
+<p><strong>Handle the next item in the playlist</strong></p>
+
+<p>This is the core playback function. On call it will tick to the next item in playlist. 
+Loop-over or finish (depending on config) when end of playlist is reached.</p>
+
+<ul>
+    <li><p>handle any ready or unfinished pre-ops, and tick to next</p></li>
+    <li><p>On pre-op, assemble a _startup function name by grabbing the function name (1st element) from the op name. Otherwise just move on to next.</p></li>
+    <li><p>If at last item in playlist, reloop back to first item OR finish and prep run of any cleanups.</p></li>
+    <li><p>handle case of any forced shutdowns. This means properly loading and calling any post-ops.</p></li>
+    <li><p>And finaly, if not diverted by anything so far, assemble and call the _startup function name for the actual playlist effect (if any).</p></li>
+</ul>
+
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>Trigger m3p_next()
+   
+  <span class="k">local</span> ename = <span class="s">""</span>
+  <span class="k">local</span> finished  = <span class="k">false</span>
+   
+   <span class="k">if</span> (self.effect_index == 0) <span class="k">then</span>
+     self.effect_index = 1
+     ename = self.m3p_pre_op     
+    
+    <span class="k">if</span> (ename ~= <span class="s">""</span>) <span class="k">then</span>  
+      Debug(<span class="s">"mod call-&gt; ["</span> ..ename ..<span class="s">"]"</span>)    
+      <span class="k">local</span> xp = from_csv(ename)
+      <span class="k">local</span> ecall = xp[1] ..<span class="s">"_startup"</span>
+      table.remove(xp,1)
+      
+     Debug(<span class="s">'pre-op Running: '</span> ..ecall)
+     SendTo(self,ecall,0,xp)          
+
+    <span class="k">else</span>   <span class="c">-- tell self to call me back with another attempt. index has been ticked...
+</span>      Debug(<span class="s">"m3p_next: no pre-op: NEXT!"</span>)
+      SendTo(self,<span class="s">'multimod_cmd_done'</span>,0)      
+    <span class="k">end</span>
+       Debug(<span class="s">"- m3p_next: 0-run done -"</span>)
+     <span class="k">return</span>
+   <span class="k">end</span> 
+ 
+
+    <span class="k">if</span> ((self.effect_index ) == (#self.playlist + 1))  <span class="k">then</span>
+      
+      <span class="k">if</span> (self.forced_post_op == <span class="k">true</span>) <span class="k">then</span>
+         self.forced_post_op = <span class="k">false</span>
+         self.multimod_running = <span class="k">true</span> 
+         ename = self.m3p_post_op        
+         self.effect_index = self.effect_index + 1   <span class="c">-- tick index for next call
+</span>      <span class="k">else</span>
+
+        <span class="k">if</span> (self.m3p_playlist_loop==1) <span class="k">then</span>     
+
+          <span class="k">if</span> (#self.playlist > 0) <span class="k">then</span>
+            ename = self.playlist[1]        
+            self.effect_index = 2
+          <span class="k">else</span>
+            ename = self.m3p_post_op
+            self.effect_index = 2
+          <span class="k">end</span>
+                        
+          Debug(<span class="s">"playlist end: looping..."</span>)
+        <span class="k">else</span>      
+          ename = self.m3p_post_op
+          self.effect_index = self.effect_index + 1              
+          Debug(<span class="s">"- playlist end: No loop: prep-post_op"</span>)
+        <span class="k">end</span>  
+      <span class="k">end</span>  
+      
+    <span class="k">elseif</span> ((self.effect_index) >= (#self.playlist +2)) <span class="k">then</span> <span class="c">-- completed post op. All done now: Also catch over-limit indicies.
+</span>      self.multimod_running = <span class="k">false</span>
+      ename = <span class="s">""</span>
+      Debug(<span class="s">"Post_op done. Prep-stop"</span>)            
+    <span class="k">else</span> <span class="c">-- not at post_op, not at end: set effect and tick index for next call.
+</span>      ename = self.playlist[self.effect_index]      
+      Debug(<span class="s">"m3p_next: mod index:"</span> ..self.effect_index)       
+      self.effect_index = self.effect_index + 1      
+    <span class="k">end</span>    
+    
+ 
+    <span class="k">if</span> (ename ~= <span class="s">""</span>) <span class="k">then</span>  
+      Debug(<span class="s">"mod call-&gt; ["</span> ..ename ..<span class="s">"]"</span>)    
+      <span class="k">local</span> xp = from_csv(ename)
+      <span class="k">local</span> ecall = xp[1] ..<span class="s">"_startup"</span>
+      table.remove(xp,1)
+     SendTo(self,ecall,0,xp)          
+    <span class="k">else</span>      
+      Debug(<span class="s">"m3p_next: all done!"</span>)
+      SendTo(self,<span class="s">'multimod_cmd_done'</span>,0)            
+    <span class="k">end</span>
+<span class="k">end</span> 
+
+
+</pre></div>
+</td>
+</tr><tr id="section-9">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-9">&#182;</a>
+  </div>
+  
+<hr/>
+<p><strong>cmd_done</strong></p>
+
+<p>Called by effects when they complete. If the playlist is still running, call for next effect.</p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>Trigger multimod_cmd_done()
+
+  <span class="k">if</span> (self.multimod_running ==<span class="k">true</span>) <span class="k">then</span>
+    SendTo(self,<span class="s">'m3p_next'</span>,30)                  
+  <span class="k">else</span>
+    Debug(<span class="s">'- multimod_cmd_done -'</span>)
+  <span class="k">end</span>    
+<span class="k">end</span>
+
+
+</pre></div>
+</td>
+</tr><tr id="section-10">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-10">&#182;</a>
+  </div>
+  
+<hr/>
+<p><strong>Load Playlist</strong></p>
+
+<p>Loads the user-defined list of effects modules from the Behavior Tool properties.
+Clears out the old playlist first.</p>
+
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre><span class="k">function</span> <span class="nf">loadUserPlaylist</span>(owner)
+
+  table.clear(owner.playlist)
+
+  <span class="k">local</span> i
+  <span class="k">local</span> user_effect
+  
+  <span class="k">for</span> i,user_effect <span class="k">in</span> <span class="nt">ipairs</span>(owner.m3p_user_playlist) <span class="k">do</span>
+    table.insert(owner.playlist,user_effect)
+  <span class="k">end</span>    
+<span class="k">end</span>
+
+</pre></div>
+</td>
+</tr><tr id="section-11">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-11">&#182;</a>
+  </div>
+  
+<hr/>
+<p><strong>Validations</strong></p>
+
+<p>Assure that target coords conform to valid value space.
+TBD</p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre><span class="k">function</span> <span class="nf">validateParams</span>(owner)
+<span class="k">end</span> 
+
+</pre></div>
+</td>
+</tr><tr id="section-12">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-12">&#182;</a>
+  </div>
+  
+<hr/>
+<p><strong>Main event/entry point</strong></p>
+
+<p><em>Prep for run</em></p>
+
+<ul>
+    <li><p>Restrict to superuser-only, if this BT option is selected.</p></li>
+    <li><p>Handle any one-time inits</p></li>
+    <li><p>Load the user-specified playlist</p></li>
+</ul>
+
+<p><em>Those pre_op and post_op gsub calls are a patch for the BT bug where a space char is added to empty-string fields either on logout or restart. Since space chars are not allowed in m0d sigs..., this is a problem.</em></p>
+
+
+
+
+
+<p><em>Playback</em></p>
+
+<p><em>Playlists can contain pre and post-roll operations. These are just regular multiM0d effects modules.</em></p>
+
+<ul>
+    <li><p>Toggle run mode: This avoids multiple instances running and other annoyances.</p></li>
+    <li><p>Activate admin messages via local chat channel, if enabled by user.</p></li>
+    <li><p>Perform any param validations</p></li>
+    <li><p>Force start of playlist at zero, which will include any pre-ops.</p></li>
+</ul>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>Trigger use(user) 
+ 
+   <span class="k">local</span> validated = <span class="k">false</span>
+   
+   <span class="k">if</span> (self.multimod_req_su==1) <span class="k">then</span>
+     <span class="k">if</span> (IsSuperuser(user)==1) <span class="k">then</span>
+       validated = <span class="k">true</span>   
+     <span class="k">end</span>
+   <span class="k">else</span>
+     validated = <span class="k">true</span>  
+   <span class="k">end</span>
+
+
+  <span class="k">if</span> (validated) <span class="k">then</span>
+    <span class="k">if</span> (self.multimod_inited == <span class="k">false</span>) <span class="k">then</span>
+      multimod_init(self)
+    <span class="k">end</span>
+    
+    self.m3p_pre_op = string.gsub(self.m3p_pre_op, <span class="s">"&#37;s"</span>,<span class="s">""</span>)
+    self.m3p_post_op = string.gsub(self.m3p_post_op, <span class="s">"&#37;s"</span>,<span class="s">""</span>)        
+
+    <span class="k">if</span> (self.multimod_running == <span class="k">false</span>) <span class="k">then</span> 
+       loadUserPlaylist(self)
+       <span class="k">for</span> v,eff <span class="k">in</span> <span class="nt">ipairs</span>(self.playlist) <span class="k">do</span>        
+         Debug(<span class="s">"     item: "</span> ..v ..<span class="s">", "</span> ..eff)
+       <span class="k">end</span>  
+       Debug(<span class="s">"- end playlist -"</span>)
+    <span class="k">end</span> 
+
+    
+
+
+    <span class="k">if</span> (self.multimod_running == <span class="k">false</span>) <span class="k">then</span>       
+      self.multimod_running = <span class="k">true</span>
+      self.forced_post_op = <span class="k">false</span>
+        
+      <span class="k">if</span> (self.m3p_chat_status == 1) <span class="k">then</span>
+        <span class="k">local</span> w = GetWorld()
+        <span class="k">local</span> cs = w.chat_system                
+        SendTo(cs, <span class="s">'chat_simple_spatial'</span>, 0, self, <span class="s">'multimod_player ON !'</span>)    
+      <span class="k">end</span>
+        
+      validateParams(self)      
+      self.effect_index = 0
+      SendTo(self,<span class="s">"m3p_next"</span>,0)      
+    <span class="k">else</span>    <span class="c">-- inform all attached m0ds and do manual shutdown   
+</span>	    
+      self.multimod_running = <span class="k">false</span>
+      SendTo(self,<span class="s">'mod_shutdown'</span>,0)     
+      SendTo(self,<span class="s">'mod_cmd_shutdown'</span>,0)
+      
+      self.effect_index = #self.playlist + 1   <span class="c">-- set playlist pointer to post_op, if any. Force call.
+</span>      self.forced_post_op = <span class="k">true</span>
+      Debug(<span class="s">'multimod_player: post_op for manual shutdown.'</span>)
+      SendTo(self,<span class="s">'m3p_next'</span>,500)   
+      
+      <span class="k">if</span> (self.m3p_chat_status == 1) <span class="k">then</span>
+        <span class="k">local</span> w = GetWorld()
+        <span class="k">local</span> cs = w.chat_system                  
+        SendTo(cs, <span class="s">'chat_simple_spatial'</span>, 0, self, <span class="s">'mod_player: shutdown'</span>)
+      <span class="k">end</span>  
+    <span class="k">end</span>  
+  <span class="k">end</span>
+<span class="k">end</span> 
+
+
+</pre></div>
+</td>
+</tr></tbody>
+    </table>
+  </div>
+</body>
+</html>

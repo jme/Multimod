@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>fill_tiles.lua</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <link rel="stylesheet" media="all" href="locco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+    <table cellpadding="0" cellspacing="0">
+      <thead>
+        <tr>
+          <th class="docs">
+            <h1>
+              fill_tiles.lua
+            </h1>
+          </th>
+          <th class="code">
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+<tr id="section-1">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-1">&#182;</a>
+  </div>
+  
+<h2>Fill Tiles</h2>
+
+<p><strong>dec 19 2009     @jme</strong></p>
+
+<p>fills a floor expanse to a specific tile and/or elevation</p>
+
+<p>Standalone &amp; Multim0d-compatible</p>
+
+<p><img src="images/fill_tiles_infox.png"></p>
+
+<hr/>
+<h2>Properties section</h2>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>
+</pre></div>
+</td>
+</tr><tr id="section-2">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-2">&#182;</a>
+  </div>
+  
+<p>Metaplace Lua included script state variables via <em>properties</em> that could be hidden, exposed or persisted.
+Here there are "constant" properties as well as user-config properties.
+Vars deemed contstant-by-convention are indicated by <strong>ALL CAPS</strong></p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>Define Properties()
+   
+    inited = <span class="k">false</span>
+    im_running = <span class="k">false</span>    
+
+    FILL_TILES_DEFAULT_X     = 1    
+    FILL_TILES_DEFAULT_Y     = 1        
+    FILL_TILES_DEFAULT_W     = 1        
+    FILL_TILES_DEFAULT_H     = 1        
+
+    FILL_TILES_DEFAULT_DELAY = 0
+    FILL_TILES_RESET_TILES   = 1    
+    FILL_TILES_TILE          = 1
+    FILL_TILES_RESET_ELEV    = 0  
+    FILL_TILES_ELEV          = 127  
+    
+</pre></div>
+</td>
+</tr><tr id="section-3">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-3">&#182;</a>
+  </div>
+  
+<p>Some silly Tool issues compelled this bit of egregiousness.    </p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>    param_count = 9
+</pre></div>
+</td>
+</tr><tr id="section-4">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-4">&#182;</a>
+  </div>
+  
+<p>User-accessible <strong>Properties</strong></p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>    fill_tiles_x = FILL_TILES_DEFAULT_X
+    PersistProperty(<span class="s">'fill_tiles_x'</span>)
+    ExposeProperty(<span class="s">'fill_tiles_x'</span>, <span class="s">'upper-left x value of playback area (default: '</span> ..FILL_TILES_DEFAULT_X ..<span class="s">")"</span>)   
+
+    fill_tiles_y = FILL_TILES_DEFAULT_Y
+    PersistProperty(<span class="s">'fill_tiles_y'</span>)
+    ExposeProperty(<span class="s">'fill_tiles_y'</span>, <span class="s">'upper-left y value of playback area (default: '</span> ..FILL_TILES_DEFAULT_Y ..<span class="s">")"</span>)   
+
+    fill_tiles_w = FILL_TILES_DEFAULT_W
+    PersistProperty(<span class="s">'fill_tiles_w'</span>)
+    ExposeProperty(<span class="s">'fill_tiles_w'</span>, <span class="s">'playback area width (default: '</span> ..FILL_TILES_DEFAULT_W ..<span class="s">")"</span>)   
+
+    fill_tiles_h = FILL_TILES_DEFAULT_H
+    PersistProperty(<span class="s">'fill_tiles_h'</span>)
+    ExposeProperty(<span class="s">'fill_tiles_h'</span>, <span class="s">'playback area height (default: '</span> ..FILL_TILES_DEFAULT_H ..<span class="s">")"</span>)   
+
+
+    fill_tiles_delay = FILL_TILES_DEFAULT_DELAY
+    PersistProperty(<span class="s">'fill_tiles_delay'</span>)
+    ExposeProperty(<span class="s">'fill_tiles_delay'</span>, <span class="s">'Startup delay. (default: '</span> ..FILL_TILES_DEFAULT_DELAY ..<span class="s">")"</span>)   
+
+    fill_tiles_reset_tiles = FILL_TILES_RESET_TILES    
+    PersistProperty(<span class="s">'fill_tiles_reset_tiles'</span>)
+    ExposeProperty(<span class="s">'fill_tiles_reset_tiles'</span>, <span class="s">'Fill all tiles in playback area. (caution!)'</span>, <span class="s">'checkbox'</span>)
+    
+    fill_tiles_tile = FILL_TILES_TILE    
+    PersistProperty(<span class="s">'fill_tiles_tile'</span>)
+    ExposeProperty(<span class="s">'fill_tiles_tile'</span>, <span class="s">'Tile to use as the fill tile. (default: '</span> ..FILL_TILES_TILE ..<span class="s">")"</span>)
+  
+    fill_tiles_reset_elev = FILL_TILES_RESET_ELEV
+    PersistProperty(<span class="s">'fill_tiles_reset_elev'</span>)
+    ExposeProperty(<span class="s">'fill_tiles_reset_elev'</span>, <span class="s">'Set elevation for playback area.(caution!)'</span>, <span class="s">'checkbox'</span>)
+    
+    fill_tiles_elev = FILL_TILES_ELEV    
+    PersistProperty(<span class="s">'fill_tiles_elev'</span>)
+    ExposeProperty(<span class="s">'fill_tiles_elev'</span>, <span class="s">'Elevation fill value. (default: '</span> ..FILL_TILES_ELEV ..<span class="s">")"</span>)
+
+</pre></div>
+</td>
+</tr><tr id="section-5">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-5">&#182;</a>
+  </div>
+  
+<p>Specify the call signature here. This is just an informative string and
+should indicate all parameters (in order) needed to manually call this plugin.
+Param onchanges are caught and reverted, <strong>SEE "parm_changed" method</strong></p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>    PARAMS_SIGNATURE = <span class="s">" X, Y, WIDTH, HEIGHT, DELAY(ms), FILL-TILE? (0 or 1), TILE-VALUE, FILL-ELEV? (0 or 1), ELEVATION-VALUE "</span>
+    PARAMS_SIGMSG = <span class="s">"sig used for Multim0d manual mode calls (opt)"</span>
+    fill_tiles_signature = PARAMS_SIGNATURE
+    ExposeProperty(<span class="s">'fill_tiles_signature'</span>, PARAMS_SIGMSG)   
+
+</pre></div>
+</td>
+</tr><tr id="section-6">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-6">&#182;</a>
+  </div>
+  
+<p>Standard required tool version, name and description fields</p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>    bt_behavior = 1
+    bt_desc = <span class="s">'fill tiles and/or elevation'</span>
+    bt_name = <span class="s">'fill_tiles'</span>
+    bt_help_image = <span class="s">'204485:8'</span>
+    bt_help_image_height = 100
+    
+<span class="k">end</span>
+</pre></div>
+</td>
+</tr><tr id="section-7">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-7">&#182;</a>
+  </div>
+  
+<hr/>
+<h2>Methods and Handlers</h2>
+<p><strong>[ Triggers would be called by the sim serverside, given the appropriate conditions ]</strong></p>
+
+
+<hr/>
+<p><strong>param changed</strong></p>
+
+<p><strong>[Required Boilerplate]</strong>   This is a mild bit of hackery.
+The <em>Call Signature</em> of an effect needed to be displayed on the Behavior Tool,
+but there was no way to write R/O text, only text that could be potentially 
+altered by the user. As a workaround each Multim0d effect would respond to the
+BT onchange trigger in order to revert attempted changes to 
+any public properties that needed to be R/O, such as the call signature.</p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>Trigger param_changed(owner, owner_id, script_id, prop)
+ 
+  <span class="k">local</span> pname = self.bt_name ..<span class="s">"_signature"</span>
+  
+  <span class="k">if</span> (prop == pname) <span class="k">then</span>   
+    Debug(<span class="s">"&lt; SIG CHANGED &gt; "</span> ..<span class="s">"script_id="</span> ..script_id ..<span class="s">" owner_id="</span> ..owner_id)        
+    SendTo(self, <span class="s">'set_script_param'</span>, 0, owner, owner.id, script_id, prop, self.PARAMS_SIGNATURE)    
+    Debug(<span class="s">"reverting signature, you silly rabbit!"</span>) 
+  <span class="k">end</span>  
+<span class="k">end</span>
+
+</pre></div>
+</td>
+</tr><tr id="section-8">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-8">&#182;</a>
+  </div>
+  
+<hr/>
+<p><strong>Cleanup</strong></p>
+
+<p><strong>[API, Optional]</strong>  Cleanup to restore source tiles to whatever they were prior to the effect run.  </p>
+
+<p>Not really applicable for this effect.</p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre><span class="k">function</span> <span class="nf">fill_tiles_cleanup</span>(do_cleanup,x0,y0,xm,ym,owner)
+<span class="k">end</span> 
+
+</pre></div>
+</td>
+</tr><tr id="section-9">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-9">&#182;</a>
+  </div>
+  
+<hr/>
+<p><strong>Shutdown</strong></p>
+
+<p><strong>[API, REQUIRED]</strong>
+ Vary the internals as desired, just be sure to invoke a crisp shutdown!</p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>Trigger mod_shutdown()
+  <span class="k">if</span> (self.im_running == <span class="k">true</span>) <span class="k">then</span>
+    Debug(self.bt_name ..<span class="s">" mod_shutdown recieved"</span>)            
+  <span class="k">end</span>  
+  self.im_running = <span class="k">false</span>
+<span class="k">end</span>
+
+</pre></div>
+</td>
+</tr><tr id="section-10">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-10">&#182;</a>
+  </div>
+  
+<hr/>
+<p><strong>Standalone Shutdown</strong></p>
+
+<p><strong>[API, Optional]</strong>
+ only needed if your module has a standalone mode.</p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>Trigger fill_tiles_shutdown()
+  self.im_running = <span class="k">false</span>
+  SendTo(self,<span class="s">'multimod_cmd_done'</span>,0)             
+  Debug(self.bt_name ..<span class="s">" shutdown called!"</span>)          
+<span class="k">end</span>
+
+</pre></div>
+</td>
+</tr><tr id="section-11">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-11">&#182;</a>
+  </div>
+  
+<hr/>
+<p><strong>Process a frame iteration</strong></p>
+
+<ul>
+    <li><p>fill the given expanse with the given tile or elevation value.</p></li>
+    <li><p>When completed, perform any cleanups, and notify player of completion.</p></li>
+</ul>
+
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>Trigger fill_tiles(x0,y0,xr, yr)   
+  
+  self.im_running = <span class="k">true</span>
+  
+  <span class="k">local</span> ix = 0
+  <span class="k">local</span> iy = 0
+    
+  <span class="k">if</span> (self.fill_tiles_reset_tiles ==1) <span class="k">then</span>
+    Debug(<span class="s">'run: tile fill...'</span>)
+    
+    <span class="k">local</span> ixm = x0 + xr -1
+    <span class="k">local</span> iym = y0 + yr -1
+    
+    <span class="k">for</span> ix = x0, ixm <span class="k">do</span>
+      <span class="k">for</span> iy = y0, iym <span class="k">do</span>
+        SetTileAt(ix,iy,self.fill_tiles_tile)
+      <span class="k">end</span>
+    <span class="k">end</span>    
+  <span class="k">end</span>
+  
+  <span class="k">if</span> (self.fill_tiles_reset_elev ==1) <span class="k">then</span>
+    Debug(<span class="s">'run: elevation fill...'</span>)    
+    <span class="k">local</span> xm = x0 + xr -1
+    <span class="k">local</span> ym = y0 + yr -1    
+    
+    <span class="k">for</span> ix=x0,xm <span class="k">do</span>
+      <span class="k">for</span> iy=y0,ym <span class="k">do</span>
+        SetElevAt(ix,iy,self.fill_tiles_elev)
+      <span class="k">end</span>
+     <span class="k">end</span>         
+  <span class="k">end</span>
+
+      self.im_running = <span class="k">false</span>
+      SendTo(self,<span class="s">'multimod_cmd_done'</span>,0)             
+      Debug(self.bt_name ..<span class="s">" completed."</span>)        
+<span class="k">end</span>
+
+</pre></div>
+</td>
+</tr><tr id="section-12">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-12">&#182;</a>
+  </div>
+  
+<hr/>
+<p><strong>Init</strong></p>
+
+<p>any one-time init items go here. Not much interesting in this one...</p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre><span class="k">function</span> <span class="nf">fill_tiles_init</span>(owner)
+    owner.inited = <span class="k">true</span>
+<span class="k">end</span> 
+
+</pre></div>
+</td>
+</tr><tr id="section-13">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-13">&#182;</a>
+  </div>
+  
+<hr/>
+<p><strong>Validate</strong></p>
+
+<p><strong>[API, Optional]</strong> Parameter validations. Validations will probably be custom for each effect,</p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre><span class="k">function</span> <span class="nf">fill_tiles_validate_params</span>(owner,p)
+
+  p[1] = math.abs(p[1])
+  p[2] = math.abs(p[2])  
+  p[3] = math.abs(p[3])
+  p[4] = math.abs(p[4])  
+  
+  p[5] = math.abs(p[5])      
+  p[6] = math.abs(p[6])        
+  p[7] = math.abs(p[7])      
+  p[8] = math.abs(p[8])        
+  p[9] = math.abs(p[9])       
+     
+<span class="k">end</span>
+</pre></div>
+</td>
+</tr><tr id="section-14">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-14">&#182;</a>
+  </div>
+  
+<hr/>
+<p><strong>Trigger for standalone usage</strong></p>
+
+<p><strong>[API, Optional]</strong>
+ only needed if your module has a standalone mode.</p>
+
+<p> If there is actually no Multim0d player and this module is not aready running</p>
+
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>Trigger use(user)   
+  <span class="k">if</span> (self.multimod_present == <span class="k">nil</span>) <span class="k">then</span>
+   Debug(<span class="s">"- Standalone mode -"</span>)
+    <span class="k">if</span> (self.im_running == <span class="k">false</span>) <span class="k">then</span>  
+      self.im_running = <span class="k">true</span>
+
+     Debug(self.bt_name ..<span class="s">' - running -'</span>)
+     SendTo(self,self.bt_name,self.fill_tiles_delay,self.fill_tiles_x,self.fill_tiles_y,self.fill_tiles_w,self.fill_tiles_h)                
+     
+    <span class="k">else</span>
+      Debug(<span class="s">"MANUAL HALT!"</span>)      
+      SendTo(self,self.bt_name ..<span class="s">'_shutdown'</span>,0)
+      self.im_running = <span class="k">false</span>
+    <span class="k">end</span>  
+  <span class="k">end</span>  
+<span class="k">end</span>
+
+</pre></div>
+</td>
+</tr><tr id="section-15">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-15">&#182;</a>
+  </div>
+  
+<hr/>
+<p><strong>Main entry point</strong></p>
+
+<p><strong>[API, Required]</strong> : This is called by the Player and is passed
+a Player-opaque, possibly empty table of support params.</p>
+
+<p>This call starts the plugin running and should behave idempotently.
++ Indicate state change and initialize as needed.</p>
+
+<ul>
+    <li>Setup run. If proper # of params were provided and they validate,
+    copy the provided values to the properties.
+    (otherwise just use any existing property values)</li>
+</ul>
+
+<p>And finally, call the handler.</p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>Trigger fill_tiles_startup(xparams) 
+  
+    <span class="k">if</span> (self.im_running == <span class="k">false</span>) <span class="k">then</span>
+      self.im_running = <span class="k">true</span>
+    
+     <span class="k">if</span> (self.inited == <span class="k">false</span>) <span class="k">then</span>
+       fill_tiles_init(self)
+     <span class="k">end</span>
+     
+     <span class="k">if</span> (#xparams ~= 0) <span class="k">then</span>
+       <span class="k">if</span> (#xparams == self.param_count) <span class="k">then</span>
+     
+           fill_tiles_validate_params(self,xparams)
+             
+           self.fill_tiles_x           = xparams[1]
+           self.fill_tiles_y           = xparams[2]
+           self.fill_tiles_w           = xparams[3]
+           self.fill_tiles_h           = xparams[4]
+           
+           self.fill_tiles_delay       = xparams[5]          
+           self.fill_tiles_reset_tiles = xparams[6]          
+           self.fill_tiles_tile        = xparams[7]          
+           self.fill_tiles_reset_elev  = xparams[8]          
+           self.fill_tiles_elev        = xparams[9]                                                      
+       <span class="k">else</span>
+         Debug(self.bt_name ..<span class="s">" ERROR: incorrect number of playlist params"</span>)
+       <span class="k">end</span>
+     <span class="k">end</span>
+     
+     Debug(self.bt_name ..<span class="s">' running...'</span>)    
+     SendTo(self,self.bt_name,self.fill_tiles_delay,self.fill_tiles_x,self.fill_tiles_y,self.fill_tiles_w,self.fill_tiles_h)          
+   <span class="k">else</span>
+     Debug(self.bt_name ..<span class="s">' sez: not yet...'</span>)      
+     self.im_running = <span class="k">false</span>
+   <span class="k">end</span> 
+<span class="k">end</span> 
+
+</pre></div>
+</td>
+</tr></tbody>
+    </table>
+  </div>
+</body>
+</html>

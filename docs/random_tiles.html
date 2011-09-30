@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>random_tiles.lua</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <link rel="stylesheet" media="all" href="locco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+    <table cellpadding="0" cellspacing="0">
+      <thead>
+        <tr>
+          <th class="docs">
+            <h1>
+              random_tiles.lua
+            </h1>
+          </th>
+          <th class="code">
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+<tr id="section-1">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-1">&#182;</a>
+  </div>
+  
+<h2>random_tiles:</h2>
+
+<p>Standalone &amp; Multim0d-compatible</p>
+
+<p><strong>dec 19 2009     @jme</strong></p>
+
+<p>Sets specified tiles at random locations within a designated ground area.</p>
+
+<h2><img src="images/random_tiles_infox.png"></h2>
+<h2>Properties section</h2>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>
+</pre></div>
+</td>
+</tr><tr id="section-2">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-2">&#182;</a>
+  </div>
+  
+<p>Metaplace Lua included script state variables via <em>properties</em> that could be hidden, exposed or persisted.
+Here there are "constant" properties as well as user-config properties.
+Vars deemed contstant-by-convention are indicated by <strong>ALL CAPS</strong></p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>Define Properties()
+   
+    inited = <span class="k">false</span>
+    im_running = <span class="k">false</span> 
+   
+    RANDOM_TILES_MIN_LOOP_MS = 30
+    
+</pre></div>
+</td>
+</tr><tr id="section-3">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-3">&#182;</a>
+  </div>
+  
+<p>declare default and/or hot-start values for any public properties.</p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>    RANDOM_TILES_DEFAULT_X     = 1    
+    RANDOM_TILES_DEFAULT_Y     = 1        
+    RANDOM_TILES_DEFAULT_W     = 1        
+    RANDOM_TILES_DEFAULT_H     = 1        
+    
+    RANDOM_TILES_DEFAULT_DELAY = 0
+    RANDOM_TILES_CLEAN         = 0
+    RANDOM_TILES_NUM_TILES     = 4
+    RANDOM_TILES_REPS          = 12
+    RANDOM_TILES_LIVE_TILE     = 4
+    RANDOM_TILES_BASE_TILE     = 1
+    RANDOM_TILES_LOOP_TIME_MS  = 250
+    
+</pre></div>
+</td>
+</tr><tr id="section-4">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-4">&#182;</a>
+  </div>
+  
+<p>Some silly Tool issues compelled this bit of egregiousness.    </p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>    param_count = 11
+</pre></div>
+</td>
+</tr><tr id="section-5">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-5">&#182;</a>
+  </div>
+  
+<p>User-accessible <strong>Properties</strong></p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>    random_tiles_x = RANDOM_TILES_DEFAULT_X
+    PersistProperty(<span class="s">'random_tiles_x'</span>)
+    ExposeProperty(<span class="s">'random_tiles_x'</span>, <span class="s">'upper-left x value of playback area (default: '</span> ..RANDOM_TILES_DEFAULT_X ..<span class="s">")"</span>)   
+
+    random_tiles_y = RANDOM_TILES_DEFAULT_Y
+    PersistProperty(<span class="s">'random_tiles_y'</span>)
+    ExposeProperty(<span class="s">'random_tiles_y'</span>, <span class="s">'upper-left y value of playback area (default: '</span> ..RANDOM_TILES_DEFAULT_Y ..<span class="s">")"</span>)   
+
+    random_tiles_w = RANDOM_TILES_DEFAULT_W
+    PersistProperty(<span class="s">'random_tiles_w'</span>)
+    ExposeProperty(<span class="s">'random_tiles_w'</span>, <span class="s">'playback area width (default: '</span> ..RANDOM_TILES_DEFAULT_W ..<span class="s">")"</span>)   
+
+    random_tiles_h = RANDOM_TILES_DEFAULT_H
+    PersistProperty(<span class="s">'random_tiles_h'</span>)
+    ExposeProperty(<span class="s">'random_tiles_h'</span>, <span class="s">'playback area height (default: '</span> ..RANDOM_TILES_DEFAULT_H ..<span class="s">")"</span>)   
+
+    random_tiles_clean = RANDOM_TILES_CLEAN    
+    PersistProperty(<span class="s">'random_tiles_clean'</span>)
+    ExposeProperty(<span class="s">'random_tiles_clean'</span>, <span class="s">'Restore span to base tile after each run.'</span>, <span class="s">'checkbox'</span>) 
+    
+    random_tiles_delay = RANDOM_TILES_DEFAULT_DELAY
+    PersistProperty(<span class="s">'random_tiles_delay'</span>)
+    ExposeProperty(<span class="s">'random_tiles_delay'</span>, <span class="s">'Startup delay. (default: '</span> ..RANDOM_TILES_DEFAULT_DELAY ..<span class="s">")"</span>)   
+
+    random_tiles_num_tiles = RANDOM_TILES_NUM_TILES
+    PersistProperty(<span class="s">'random_tiles_num_tiles'</span>)
+    ExposeProperty(<span class="s">'random_tiles_num_tiles'</span>, <span class="s">'How many tile changes per repetition?'</span>)
+    
+    current_rep = RANDOM_TILES_REPS    
+    random_tiles_reps = RANDOM_TILES_REPS
+    PersistProperty(<span class="s">'random_tiles_reps'</span>)
+    ExposeProperty(<span class="s">'random_tiles_reps'</span>, <span class="s">'Number of repetitions per run.'</span>)
+    
+    random_tiles_live_tile = RANDOM_TILES_LIVE_TILE
+    PersistProperty(<span class="s">'random_tiles_live_tile'</span>)
+    ExposeProperty(<span class="s">'random_tiles_live_tile'</span>, <span class="s">'Tile Id for on-tile.'</span>)
+    
+    random_tiles_base_tile = RANDOM_TILES_BASE_TILE
+    PersistProperty(<span class="s">'random_tiles_base_tile'</span>)
+    ExposeProperty(<span class="s">'random_tiles_base_tile'</span>, <span class="s">'Tile Id for base-tile.'</span>)
+    
+    random_tiles_loop_time_ms = RANDOM_TILES_LOOP_TIME_MS
+    PersistProperty(<span class="s">'random_tiles_loop_time_ms'</span>)
+    ExposeProperty(<span class="s">'random_tiles_loop_time_ms'</span>, <span class="s">'Looping interval, in milliseconds. (caution!)'</span>)
+
+</pre></div>
+</td>
+</tr><tr id="section-6">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-6">&#182;</a>
+  </div>
+  
+<p>Specify the call signature here. This is just an informative string and
+should indicate all parameters (in order) needed to manually call this plugin.
+Param onchanges are caught and reverted, <strong>SEE "parm_changed" method</strong></p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>    PARAMS_SIGNATURE = <span class="s">" X, Y, WIDTH, HEIGHT, DELAY(ms), PER-RUN-CLEANUP? (0 or 1), #TILES, #REPS, TILE-ON, TILE-OFF, LOOP-TIME(ms)"</span>    
+    PARAMS_SIGMSG = <span class="s">"sig used for Multim0d manual mode calls (opt)"</span>
+    random_tiles_signature = PARAMS_SIGNATURE
+    ExposeProperty(<span class="s">'random_tiles_signature'</span>, PARAMS_SIGMSG)   
+
+
+</pre></div>
+</td>
+</tr><tr id="section-7">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-7">&#182;</a>
+  </div>
+  
+<p>Standard required tool version, name and description fields</p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>    bt_behavior = 1
+    bt_desc = <span class="s">"display tiles at random positions"</span>
+    bt_name = <span class="s">'random_tiles'</span>
+    bt_help_image = <span class="s">'204484:11'</span>
+    bt_help_height = 108
+<span class="k">end</span>
+</pre></div>
+</td>
+</tr><tr id="section-8">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-8">&#182;</a>
+  </div>
+  
+<hr/>
+<h2>Methods and Handlers</h2>
+<p><strong>[ Triggers would be called by the sim serverside, given the appropriate conditions ]</strong></p>
+
+
+<hr/>
+<p><strong>Param Changed</strong></p>
+
+<p><strong>[Required Boilerplate]</strong>  This is a mild bit of hackery.
+The <em>Call Signature</em> of an effect needed to be displayed on the Behavior Tool,
+but there was no way to write R/O text, only text that could be potentially 
+altered by the user. As a workaround each Multim0d effect would respond to the
+BT onchange trigger in order to revert attempted changes to 
+any public properties that needed to be R/O, such as the call signature.</p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>Trigger param_changed(owner, owner_id, script_id, prop)
+ 
+  <span class="k">local</span> pname = self.bt_name ..<span class="s">"_signature"</span>
+  
+  <span class="k">if</span> (prop == pname) <span class="k">then</span>   
+    Debug(<span class="s">"&lt; SIG CHANGED &gt; "</span> ..<span class="s">"script_id="</span> ..script_id ..<span class="s">" owner_id="</span> ..owner_id)        
+    SendTo(self, <span class="s">'set_script_param'</span>, 0, owner, owner.id, script_id, prop, self.PARAMS_SIGNATURE)    
+    Debug(<span class="s">"reverting signature, you silly rabbit!"</span>) 
+  <span class="k">end</span>  
+<span class="k">end</span>
+
+</pre></div>
+</td>
+</tr><tr id="section-9">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-9">&#182;</a>
+  </div>
+  
+<hr/>
+<p><strong>Process a frame iteration</strong></p>
+
+
+<ul>
+    <li><p>Inside a given tile expanse, choose a given number of randomly-selected tile to be set to the 
+    "live" value.</p></li>
+    <li><p>Unless explicitly stopped, repeat this operation for the given number of repetitions.</p></li>
+    <li><p>When reps are completed, perform any cleanups, and notify player of completion.</p></li>
+</ul>
+
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>Trigger random_tiles(x0,y0,xr, yr)   
+   
+    <span class="k">local</span> lx=0
+    <span class="k">local</span> ly=0
+
+    <span class="k">for</span> i=1,self.random_tiles_num_tiles <span class="k">do</span>      
+
+      lx = math.random(xr) + x0 -1
+      ly = math.random(yr) + y0 -1
+            
+      <span class="k">if</span> (GetTileAt(lx,ly) ~= self.random_tiles_live_tile) <span class="k">then</span>
+        SetTileAt(lx,ly,self.random_tiles_live_tile)
+      <span class="k">elseif</span>  (GetTileAt(lx,ly) == self.random_tiles_live_tile) <span class="k">then</span>
+        SetTileAt(lx,ly,self.random_tiles_base_tile)
+      <span class="k">end</span> 
+    <span class="k">end</span>  
+
+    <span class="k">if</span> (self.im_running == <span class="k">true</span>) <span class="k">then</span>    
+    
+      self.current_rep = self.current_rep -1
+      <span class="k">if</span> (self.current_rep >0) <span class="k">then</span>
+         SendTo(self,self.bt_name,self.random_tiles_loop_time_ms,x0,y0,xr,yr) 
+      <span class="k">else</span>
+        self.current_rep = self.random_tiles_reps   
+        random_tiles_cleanup(self.random_tiles_clean,x0,y0,xr,yr,self.random_tiles_base_tile)      
+        self.im_running = <span class="k">false</span>
+        Debug(self.bt_name ..<span class="s">" completed"</span>)                
+        SendTo(self,<span class="s">'multimod_cmd_done'</span>,0)         
+      <span class="k">end</span> 
+    <span class="k">else</span>
+      random_tiles_cleanup(self.random_tiles_clean,x0,y0,xr,yr,self.random_tiles_base_tile)      
+      self.im_running = <span class="k">false</span>
+      Debug(self.bt_name ..<span class="s">" halting"</span>)              
+      SendTo(self,<span class="s">'multimod_cmd_done'</span>,0)             
+    <span class="k">end</span>
+<span class="k">end</span> 
+
+
+</pre></div>
+</td>
+</tr><tr id="section-10">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-10">&#182;</a>
+  </div>
+  
+<hr/>
+<p><strong>Cleanup</strong></p>
+
+<p><strong>[API, Optional]</strong>  Cleanup to restore source tiles to whatever they were prior to the effect run.  </p>
+
+<p>Reset tiles all to the original base tile. This version assumes uniform tile for the expanse.</p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre><span class="k">function</span> <span class="nf">random_tiles_cleanup</span>(c,x0,y0,xr,yr,t)
+
+  <span class="k">if</span> (c==1) <span class="k">then</span>
+    <span class="k">local</span> xm = x0 + (xr-1)
+    <span class="k">local</span> ym = y0 + (yr-1)
+    <span class="k">for</span> i=x0,xm <span class="k">do</span>
+      <span class="k">for</span> k=y0,ym <span class="k">do</span>
+        SetTileAt(i,k,t)
+      <span class="k">end</span>
+     <span class="k">end</span>            
+  <span class="k">end</span> 
+<span class="k">end</span> 
+
+
+</pre></div>
+</td>
+</tr><tr id="section-11">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-11">&#182;</a>
+  </div>
+  
+<hr/>
+<p><strong>Validate</strong></p>
+
+<p><strong>[API, Optional]</strong> Parameter validations. Validations will probably be custom for each effect,</p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre><span class="k">function</span> <span class="nf">random_tiles_validate_params</span>(owner,p)
+
+  p[1] = math.abs(p[1])
+  p[2] = math.abs(p[2])  
+  p[3] = math.abs(p[3])
+  p[4] = math.abs(p[4])  
+  
+  p[5] = math.abs(p[5])    
+  p[6] = math.abs(p[6])      
+  p[7] = math.abs(p[7])    
+  p[8] = math.abs(p[8])    
+  p[9] = math.abs(p[9])   
+  p[10] = math.abs(p[10])      
+       
+  <span class="k">if</span> (<span class="nt">tonumber</span>(p[11]) < owner.RANDOM_TILES_MIN_LOOP_MS) <span class="k">then</span>
+    p[11] = owner.RANDOM_TILES_MIN_LOOP_MS
+  <span class="k">end</span>
+<span class="k">end</span> 
+
+</pre></div>
+</td>
+</tr><tr id="section-12">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-12">&#182;</a>
+  </div>
+  
+<hr/>
+<p><strong>Init</strong></p>
+
+<p>any one-time init items go here. Not much interesting in this one...</p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre><span class="k">function</span> <span class="nf">random_tiles_init</span>(owner)
+    owner.inited = <span class="k">true</span>
+<span class="k">end</span>
+
+
+</pre></div>
+</td>
+</tr><tr id="section-13">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-13">&#182;</a>
+  </div>
+  
+<hr/>
+<p><strong>Shutdown</strong></p>
+
+<p><strong>[API, REQUIRED]</strong>
+ Vary the internals as desired, just be sure to invoke a crisp shutdown!</p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>Trigger mod_shutdown()
+  <span class="k">if</span> (self.im_running == <span class="k">true</span>) <span class="k">then</span>
+    Debug(self.bt_name ..<span class="s">" mod_shutdown recieved"</span>)            
+  <span class="k">end</span>  
+  self.im_running = <span class="k">false</span>
+<span class="k">end</span>
+
+</pre></div>
+</td>
+</tr><tr id="section-14">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-14">&#182;</a>
+  </div>
+  
+<hr/>
+<p><strong>Standalone Shutdown</strong></p>
+
+<p><strong>[API, Optional]</strong>
+ only needed if your module has a standalone mode.</p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>Trigger random_tiles_shutdown()
+  self.im_running = <span class="k">false</span>
+  SendTo(self,<span class="s">'multimod_cmd_done'</span>,0)             
+  Debug(self.bt_name ..<span class="s">" shutdown called!"</span>)          
+<span class="k">end</span>
+
+</pre></div>
+</td>
+</tr><tr id="section-15">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-15">&#182;</a>
+  </div>
+  
+<hr/>
+<p><strong>Trigger for standalone usage</strong></p>
+
+<p><strong>[API, Optional]</strong>
+ only needed if your module has a standalone mode.</p>
+
+<p> If there is actually no Multim0d player and this module is not aready running</p>
+
+<ul>
+    <li><p>set the initial rep value from properties</p></li>
+    <li><p>startup the effect.</p></li>
+</ul>
+
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>Trigger use(user)   
+  <span class="k">if</span> (self.multimod_present == <span class="k">nil</span>) <span class="k">then</span>
+   Debug(<span class="s">"- Standalone mode -"</span>)
+    <span class="k">if</span> (self.im_running == <span class="k">false</span>) <span class="k">then</span>  
+      self.im_running = <span class="k">true</span>
+            
+     self.current_rep = self.random_tiles_reps
+     Debug(self.bt_name ..<span class="s">' - running -'</span>)
+     SendTo(self,self.bt_name,self.random_tiles_delay,self.random_tiles_x,self.random_tiles_y,self.random_tiles_w,self.random_tiles_h)     
+      
+    <span class="k">else</span>
+      Debug(<span class="s">"MANUAL HALT!"</span>)      
+      SendTo(self,self.bt_name ..<span class="s">'_shutdown'</span>,0)
+      self.im_running = <span class="k">false</span>
+    <span class="k">end</span>  
+  <span class="k">end</span>  
+<span class="k">end</span>
+
+</pre></div>
+</td>
+</tr><tr id="section-16">
+<td class="docs">
+  <div class="pilwrap">
+    <a class="pilcrow" href="#section-16">&#182;</a>
+  </div>
+  
+<hr/>
+<p><strong>Main entry point</strong></p>
+
+<p><strong>[API, Required]</strong> : This is called by the Player and is passed
+a Player-opaque, possibly empty table of support params.</p>
+
+<p>This call starts the plugin running and should behave idempotently.</p>
+
+<ul>
+    <li><p>Indicate state change and initialize as needed.</p></li>
+    <li><p>Setup run. If proper # of params were provided and they validate,
+    copy the provided values to the properties.
+    (otherwise just use any existing property values)</p></li>
+    <li><p>set the initial rep value.</p></li>
+</ul>
+
+<p>And finally, select for effect option and call with appropriate handler reference.</p>
+
+
+</td>
+<td class="code">
+  <div class="highlight"><pre>Trigger random_tiles_startup(xparams) 
+  
+    
+    <span class="k">if</span> (self.im_running == <span class="k">false</span>) <span class="k">then</span>
+      self.im_running = <span class="k">true</span>
+       
+     <span class="k">if</span> (self.inited == <span class="k">false</span>) <span class="k">then</span>
+       random_tiles_init(self)
+     <span class="k">end</span>
+
+     <span class="k">if</span> (#xparams ~= 0) <span class="k">then</span>
+       <span class="k">if</span> (#xparams == self.param_count) <span class="k">then</span>
+       
+           random_tiles_validate_params(self,xparams)
+           
+           self.random_tiles_x     = xparams[1]
+           self.random_tiles_y     = xparams[2]
+           self.random_tiles_w     = xparams[3]
+           self.random_tiles_h     = xparams[4]
+                                            
+           self.random_tiles_delay = xparams[5]                     
+           self.random_tiles_clean = xparams[6]          
+           self.random_tiles_num_tiles = xparams[7]          
+           self.random_tiles_reps = xparams[8]           
+           self.random_tiles_live_tile = xparams[9]
+           self.random_tiles_base_tile = xparams[10]           
+           self.random_tiles_loop_time_ms = xparams[11]           
+       <span class="k">else</span>
+         Debug(self.bt_name ..<span class="s">" ERROR: incorrect number of playlist params"</span>)
+       <span class="k">end</span>
+     <span class="k">end</span>
+
+     self.current_rep = self.random_tiles_reps
+
+     Debug(<span class="s">'random_tiles running...'</span>)
+     SendTo(self,self.bt_name,self.random_tiles_delay,self.random_tiles_x,self.random_tiles_y,self.random_tiles_w,self.random_tiles_h)     
+   <span class="k">else</span>
+     Debug(<span class="s">'random_tiles sez: not yet...'</span>)  
+     self.im_running = <span class="k">false</span>         
+   <span class="k">end</span> 
+<span class="k">end</span> 
+
+
+</pre></div>
+</td>
+</tr></tbody>
+    </table>
+  </div>
+</body>
+</html>
